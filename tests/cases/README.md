@@ -17,6 +17,10 @@ ignored `growthbook::test::evaluate_contextual_bandits` test. Ordinary experimen
 and unknown-field tolerance cases still run. When adding support, remove the
 exclusions/ignore and extend result validation to cover bandit metadata.
 
+The top-level `run` suite runs in `tests/run_spec.rs`, with each experiment
+evaluated as a feature rule. Cases that need context-level options or
+experiment fields with no rule equivalent are skipped and listed there.
+
 Saved-group v2 suites run in `tests/saved_group_references_v2.rs`. Corpus
 contents and `specVersion` do not declare SDK capabilities.
 
