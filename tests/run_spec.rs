@@ -13,16 +13,8 @@ mod corpus;
 const UNSUPPORTED_CONTEXT_KEYS: [&str; 4] = ["enabled", "qaMode", "url", "forcedVariations"];
 /// Experiment fields that change meaning (or are ignored) inside a feature rule.
 const UNSUPPORTED_EXPERIMENT_KEYS: [&str; 2] = ["active", "force"];
-/// Existing divergences from JS `_run`, unrelated to the run-as-rule harness.
-const KNOWN_DIVERGENCES: [(&str, &str); 2] = [
-    ("single variation", "experiments with fewer than two variations are not skipped"),
-    ("Filtered, ignore namespace", "namespace is still checked when filters are present"),
-];
 
 fn unsupported_reason(case: &Value) -> Option<String> {
-    if let Some((_, reason)) = KNOWN_DIVERGENCES.iter().find(|(name, _)| case[0] == *name) {
-        return Some(reason.to_string());
-    }
     let context = case[1].as_object().expect("context object");
     let experiment = case[2].as_object().expect("experiment object");
     UNSUPPORTED_CONTEXT_KEYS
