@@ -33,6 +33,9 @@ commit, preserving its bytes. Update `source.json` with that commit, its
 `specVersion`, and the output of `shasum -a 256 tests/cases/cases.json`. Never
 hand-edit the upstream file or change its version independently of its cases.
 Keep local cases in `rust.json`; if upstream adopts one, remove the local copy.
+The local `run` and `feature` rollout/range-boundary cases duplicate cases
+upstream in growthbook#7375; delete them from `rust.json` when the snapshot is
+bumped to a commit containing them (the loader refuses shadowed names).
 
 Run the Rust tests and verify the snapshot against its pinned upstream commit:
 
