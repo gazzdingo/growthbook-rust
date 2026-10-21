@@ -1,5 +1,6 @@
 use crate::condition::elem_match_comparison::ElemMatchComparison;
 use crate::condition::eval_context::ConditionEvalContext;
+use crate::condition::js_coercion::js_condition_equals;
 use crate::condition::operator_condition::OperatorCondition;
 use crate::condition::order_comparison::OrderComparison;
 use crate::condition::regex_comparison::RegexComparison;
@@ -95,12 +96,7 @@ pub(super) fn matches_value(
             return fields.iter().all(|field| verify(Some(&attributes[0]), field, &nested, false));
         }
     }
-    if case_insensitive {
-        if let (GrowthBookAttributeValue::String(actual), GrowthBookAttributeValue::String(expected)) = (actual, expected) {
-            return actual.to_lowercase() == expected.to_lowercase();
-        }
-    }
-    actual.strict_eq(expected)
+    js_condition_equals(actual, expected, case_insensitive)
 }
 
 /// Resolve a condition-level reference. Unknown reference fields are ignored.
@@ -145,88 +141,15 @@ fn non_operator_or_condition(
     ctx: &ConditionEvalContext,
 ) -> bool {
     match &feature_attribute.value {
-        GrowthBookAttributeValue::String(_) => string_non_operator(parent_attribute, feature_attribute, ctx),
-        GrowthBookAttributeValue::Array(feature_values) => array(&parent_attribute, &feature_attribute, ctx, feature_values),
-        GrowthBookAttributeValue::Object(it) => object(parent_attribute, feature_attribute, ctx, it),
-        GrowthBookAttributeValue::Empty => empty(&parent_attribute, &feature_attribute, ctx),
-        it => fallback(&parent_attribute, feature_attribute, ctx, it),
-    }
-}
-
-fn string_non_operator(
-    parent_attribute: Option<&GrowthBookAttribute>,
-    feature_attribute: &GrowthBookAttribute,
-    ctx: &ConditionEvalContext,
-) -> bool {
-    if feature_attribute.key.starts_with('$') && parent_attribute.is_some() {
-        false
-    } else {
-        OperatorCondition::eq(parent_attribute, feature_attribute, ctx, verify)
-    }
-}
-
-fn array(
-    parent_attribute: &Option<&GrowthBookAttribute>,
-    feature_attribute: &&GrowthBookAttribute,
-    ctx: &ConditionEvalContext,
-    feature_values: &[GrowthBookAttributeValue],
-) -> bool {
-    if let Some(GrowthBookAttributeValue::Array(user_values)) = ctx.find_value(&parent_attribute.unwrap_or(feature_attribute).key) {
-        if feature_values.len() == user_values.len() {
-            feature_values.iter().enumerate().all(|(index, value)| value == &user_values[index])
-        } else {
-            false
-        }
-    } else {
-        false
-    }
-}
-
-fn object(
-    parent_attribute: Option<&GrowthBookAttribute>,
-    feature_attribute: &GrowthBookAttribute,
-    ctx: &ConditionEvalContext,
-    it: &[GrowthBookAttribute],
-) -> bool {
-    if it.is_empty() {
-        // A non-operator condition `{key: {}}` is a deep-equality check, so it
-        // matches only when the user's value at `key` is itself an empty object
-        // `{}`. A missing attribute (or any non-object / non-empty value) does
-        // not match.
-        matches!(
-            ctx.find_value(&parent_attribute.unwrap_or(feature_attribute).key),
-            Some(GrowthBookAttributeValue::Object(user_object)) if user_object.is_empty()
-        )
-    } else {
-        it.iter().all(|next| {
+        GrowthBookAttributeValue::Object(fields) if is_operator_object(fields) => fields.iter().all(|next| {
             let parent = feature_attribute.aggregate_key(parent_attribute);
             verify(Some(&parent), next, ctx, false)
-        })
-    }
-}
-
-fn empty(
-    parent_attribute: &Option<&GrowthBookAttribute>,
-    feature_attribute: &&GrowthBookAttribute,
-    ctx: &ConditionEvalContext,
-) -> bool {
-    if let Some(it) = ctx.find_value(&parent_attribute.unwrap_or(feature_attribute).key) {
-        it == GrowthBookAttributeValue::Empty
-    } else {
-        true
-    }
-}
-
-fn fallback(
-    parent_attribute: &Option<&GrowthBookAttribute>,
-    feature_attribute: &GrowthBookAttribute,
-    ctx: &ConditionEvalContext,
-    it: &GrowthBookAttributeValue,
-) -> bool {
-    if let Some(user_value) = ctx.find_value(&parent_attribute.unwrap_or(feature_attribute).key) {
-        it == &user_value
-    } else {
-        false
+        }),
+        expected => {
+            // JS getPath returns null for missing paths.
+            let actual = ctx.find_value(&parent_attribute.unwrap_or(feature_attribute).key).unwrap_or(GrowthBookAttributeValue::Empty);
+            js_condition_equals(&actual, expected, false)
+        },
     }
 }
 

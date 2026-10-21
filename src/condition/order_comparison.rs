@@ -1,4 +1,7 @@
+use std::cmp::Ordering;
+
 use crate::condition::eval_context::ConditionEvalContext;
+use crate::condition::js_coercion::js_compare;
 use crate::extensions::FindGrowthBookAttribute;
 use crate::model_public::{GrowthBookAttribute, GrowthBookAttributeValue};
 
@@ -11,14 +14,7 @@ impl OrderComparison {
         ctx: &ConditionEvalContext,
         array_size: bool,
     ) -> bool {
-        evaluate(
-            parent_attribute,
-            feature_attribute,
-            ctx,
-            array_size,
-            |feature_number, user_number| user_number.gt(feature_number),
-            |feature_string, user_string| user_string.gt(feature_string),
-        )
+        evaluate(parent_attribute, feature_attribute, ctx, array_size, Ordering::is_gt)
     }
 
     pub fn gte(
@@ -27,14 +23,7 @@ impl OrderComparison {
         ctx: &ConditionEvalContext,
         array_size: bool,
     ) -> bool {
-        evaluate(
-            parent_attribute,
-            feature_attribute,
-            ctx,
-            array_size,
-            |feature_number, user_number| user_number.ge(feature_number),
-            |feature_string, user_string| user_string.ge(feature_string),
-        )
+        evaluate(parent_attribute, feature_attribute, ctx, array_size, Ordering::is_ge)
     }
 
     pub fn lt(
@@ -43,14 +32,7 @@ impl OrderComparison {
         ctx: &ConditionEvalContext,
         array_size: bool,
     ) -> bool {
-        evaluate(
-            parent_attribute,
-            feature_attribute,
-            ctx,
-            array_size,
-            |feature_number, user_number| user_number.lt(feature_number),
-            |feature_string, user_string| user_string.lt(feature_string),
-        )
+        evaluate(parent_attribute, feature_attribute, ctx, array_size, Ordering::is_lt)
     }
 
     pub fn lte(
@@ -59,14 +41,7 @@ impl OrderComparison {
         ctx: &ConditionEvalContext,
         array_size: bool,
     ) -> bool {
-        evaluate(
-            parent_attribute,
-            feature_attribute,
-            ctx,
-            array_size,
-            |feature_number, user_number| user_number.le(feature_number),
-            |feature_string, user_string| user_string.le(feature_string),
-        )
+        evaluate(parent_attribute, feature_attribute, ctx, array_size, Ordering::is_le)
     }
 }
 
@@ -75,74 +50,12 @@ fn evaluate(
     feature_attribute: &GrowthBookAttribute,
     ctx: &ConditionEvalContext,
     array_size: bool,
-    string_condition: fn(&str, &str) -> bool,
-    number_condition: fn(&f64, &f64) -> bool,
+    condition: fn(Ordering) -> bool,
 ) -> bool {
-    if feature_attribute.value.is_number() {
-        number_evaluate(parent_attribute, feature_attribute, ctx, array_size, number_condition)
-    } else {
-        string_evaluate(parent_attribute, feature_attribute, ctx, string_condition)
-    }
-}
-
-fn string_evaluate(
-    parent_attribute: Option<&GrowthBookAttribute>,
-    feature_attribute: &GrowthBookAttribute,
-    ctx: &ConditionEvalContext,
-    condition: fn(&str, &str) -> bool,
-) -> bool {
-    if let Some(user_value) = ctx.find_value(&parent_attribute.unwrap_or(feature_attribute).key) {
-        let feature_value = feature_attribute.value.to_string();
-        match user_value {
-            GrowthBookAttributeValue::Array(it) => it.iter().any(|item| condition(&feature_value, &item.to_string())),
-            it => condition(&feature_value, &it.to_string()),
-        }
-    } else {
-        false
-    }
-}
-
-fn number_evaluate(
-    parent_attribute: Option<&GrowthBookAttribute>,
-    feature_attribute: &GrowthBookAttribute,
-    ctx: &ConditionEvalContext,
-    array_size: bool,
-    condition: fn(&f64, &f64) -> bool,
-) -> bool {
-    // JS getPath returns null for missing paths, which numeric comparisons coerce to zero.
-    let user_value = ctx.find_value(&parent_attribute.unwrap_or(feature_attribute).key).unwrap_or(GrowthBookAttributeValue::Empty);
-    if let (Some(feature_number), Some(user_numbers)) = (get_feature_number(feature_attribute), get_user_numbers(&user_value, array_size)) {
-        user_numbers.iter().any(|number| condition(&feature_number, number))
-    } else {
-        false
-    }
-}
-
-fn get_feature_number(feature_attribute: &GrowthBookAttribute) -> Option<f64> {
-    match &feature_attribute.value {
-        GrowthBookAttributeValue::Int(it) => Some(*it as f64),
-        GrowthBookAttributeValue::Float(it) => Some(*it),
-        GrowthBookAttributeValue::String(string_number) => string_number.replace('.', "").parse::<f64>().ok(),
-        _ => None,
-    }
-}
-
-fn get_user_numbers(
-    user_value: &GrowthBookAttributeValue,
-    array_size: bool,
-) -> Option<Vec<f64>> {
-    match user_value {
-        GrowthBookAttributeValue::Empty => Some(vec![0.0]),
-        GrowthBookAttributeValue::Int(it) => Some(vec![*it as f64]),
-        GrowthBookAttributeValue::Float(it) => Some(vec![*it]),
-        GrowthBookAttributeValue::Array(it) => {
-            if array_size {
-                Some(vec![it.len() as f64])
-            } else {
-                Some(it.iter().filter(|item| item.is_number()).filter_map(|item| item.as_f64()).collect())
-            }
-        },
-        GrowthBookAttributeValue::String(string_number) => string_number.replace('.', "").parse::<f64>().ok().map(|it| vec![it]),
-        _ => None,
-    }
+    // JS getPath returns null for missing paths; the operators then use JS `<`/`>`.
+    let user_value = match ctx.find_value(&parent_attribute.unwrap_or(feature_attribute).key).unwrap_or(GrowthBookAttributeValue::Empty) {
+        GrowthBookAttributeValue::Array(items) if array_size => GrowthBookAttributeValue::Int(items.len() as i64),
+        it => it,
+    };
+    js_compare(&user_value, &feature_attribute.value).is_some_and(condition)
 }

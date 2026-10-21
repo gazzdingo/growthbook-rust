@@ -162,6 +162,661 @@
         ]
       },
       false
+    ],
+    [
+      "$gt - ISO date strings compare lexicographically",
+      {
+        "d": {
+          "$gt": "2023-01-01"
+        }
+      },
+      {
+        "d": "2024-05-01"
+      },
+      true
+    ],
+    [
+      "$lt - ISO date strings compare lexicographically",
+      {
+        "d": {
+          "$lt": "2023-01-01"
+        }
+      },
+      {
+        "d": "2024-05-01"
+      },
+      false
+    ],
+    [
+      "$gt - decimal strings compare lexicographically",
+      {
+        "v": {
+          "$gt": "1.9"
+        }
+      },
+      {
+        "v": "1.10"
+      },
+      false
+    ],
+    [
+      "$lt - decimal strings compare lexicographically",
+      {
+        "v": {
+          "$lt": "1.9"
+        }
+      },
+      {
+        "v": "1.10"
+      },
+      true
+    ],
+    [
+      "$gt - decimal string attribute vs number",
+      {
+        "n": {
+          "$gt": 2
+        }
+      },
+      {
+        "n": "1.5"
+      },
+      false
+    ],
+    [
+      "$lt - decimal string attribute vs number",
+      {
+        "n": {
+          "$lt": 2
+        }
+      },
+      {
+        "n": "1.5"
+      },
+      true
+    ],
+    [
+      "$gte - decimal string condition vs number attribute",
+      {
+        "n": {
+          "$gte": "1.5"
+        }
+      },
+      {
+        "n": 1.5
+      },
+      true
+    ],
+    [
+      "$lte - non-numeric string vs number",
+      {
+        "n": {
+          "$lte": 5
+        }
+      },
+      {
+        "n": "abc"
+      },
+      false
+    ],
+    [
+      "$gte - missing attribute is null (0)",
+      {
+        "n": {
+          "$gte": 0
+        }
+      },
+      {},
+      true
+    ],
+    [
+      "$lt - missing attribute vs string",
+      {
+        "n": {
+          "$lt": "a"
+        }
+      },
+      {},
+      false
+    ],
+    [
+      "$gt - missing attribute vs negative numeric string",
+      {
+        "n": {
+          "$gt": "-1"
+        }
+      },
+      {},
+      true
+    ],
+    [
+      "$gt - null attribute vs number",
+      {
+        "n": {
+          "$gt": -1
+        }
+      },
+      {
+        "n": null
+      },
+      true
+    ],
+    [
+      "$gt - boolean attribute is a number",
+      {
+        "b": {
+          "$gt": 0
+        }
+      },
+      {
+        "b": true
+      },
+      true
+    ],
+    [
+      "$gt - array attribute is not compared per element",
+      {
+        "a": {
+          "$gt": 5
+        }
+      },
+      {
+        "a": [
+          1,
+          10
+        ]
+      },
+      false
+    ],
+    [
+      "$gt - single element array attribute coerces",
+      {
+        "a": {
+          "$gt": 5
+        }
+      },
+      {
+        "a": [
+          10
+        ]
+      },
+      true
+    ],
+    [
+      "$lt - array attribute vs string compares joined string",
+      {
+        "a": {
+          "$lt": "b"
+        }
+      },
+      {
+        "a": [
+          "a",
+          "z"
+        ]
+      },
+      true
+    ],
+    [
+      "$gt - empty string attribute is 0",
+      {
+        "s": {
+          "$gt": -1
+        }
+      },
+      {
+        "s": ""
+      },
+      true
+    ],
+    [
+      "$gt - hex string attribute",
+      {
+        "s": {
+          "$gt": 25
+        }
+      },
+      {
+        "s": "0x1A"
+      },
+      true
+    ],
+    [
+      "$gte - strings compare by code unit",
+      {
+        "s": {
+          "$gte": "a"
+        }
+      },
+      {
+        "s": "B"
+      },
+      false
+    ],
+    [
+      "equality - string condition vs number attribute",
+      {
+        "n": "1.5"
+      },
+      {
+        "n": 1.5
+      },
+      true
+    ],
+    [
+      "equality - string condition vs integer float attribute",
+      {
+        "n": "1"
+      },
+      {
+        "n": 1
+      },
+      true
+    ],
+    [
+      "equality - string condition vs large number attribute",
+      {
+        "n": "1e+21"
+      },
+      {
+        "n": 1e+21
+      },
+      true
+    ],
+    [
+      "equality - string condition vs boolean attribute",
+      {
+        "b": "true"
+      },
+      {
+        "b": true
+      },
+      true
+    ],
+    [
+      "equality - string condition vs null attribute",
+      {
+        "n": "null"
+      },
+      {
+        "n": null
+      },
+      true
+    ],
+    [
+      "equality - string condition vs missing attribute",
+      {
+        "n": "null"
+      },
+      {},
+      true
+    ],
+    [
+      "equality - string undefined condition vs missing attribute",
+      {
+        "n": "undefined"
+      },
+      {},
+      false
+    ],
+    [
+      "equality - string condition vs array attribute",
+      {
+        "a": "a,b"
+      },
+      {
+        "a": [
+          "a",
+          "b"
+        ]
+      },
+      true
+    ],
+    [
+      "equality - string condition vs array attribute element",
+      {
+        "a": "a"
+      },
+      {
+        "a": [
+          "a",
+          "b"
+        ]
+      },
+      false
+    ],
+    [
+      "equality - string condition vs object attribute",
+      {
+        "o": "[object Object]"
+      },
+      {
+        "o": {
+          "x": 1
+        }
+      },
+      true
+    ],
+    [
+      "equality - number condition vs numeric string",
+      {
+        "n": 10
+      },
+      {
+        "n": "10"
+      },
+      true
+    ],
+    [
+      "equality - number condition vs decimal string",
+      {
+        "n": 1.5
+      },
+      {
+        "n": "1.5"
+      },
+      true
+    ],
+    [
+      "equality - number 0 condition vs empty string",
+      {
+        "n": 0
+      },
+      {
+        "n": ""
+      },
+      true
+    ],
+    [
+      "equality - number 1 condition vs true",
+      {
+        "n": 1
+      },
+      {
+        "n": true
+      },
+      true
+    ],
+    [
+      "equality - number 0 condition vs false",
+      {
+        "n": 0
+      },
+      {
+        "n": false
+      },
+      true
+    ],
+    [
+      "equality - number 0 condition vs null",
+      {
+        "n": 0
+      },
+      {
+        "n": null
+      },
+      true
+    ],
+    [
+      "equality - number 0 condition vs missing",
+      {
+        "n": 0
+      },
+      {},
+      true
+    ],
+    [
+      "equality - number condition vs non-numeric string",
+      {
+        "n": 1
+      },
+      {
+        "n": "abc"
+      },
+      false
+    ],
+    [
+      "equality - number 1 condition vs 1.0",
+      {
+        "n": 1
+      },
+      {
+        "n": 1.0
+      },
+      true
+    ],
+    [
+      "equality - number 1.0 condition vs 1",
+      {
+        "n": 1.0
+      },
+      {
+        "n": 1
+      },
+      true
+    ],
+    [
+      "equality - true condition vs string false",
+      {
+        "b": true
+      },
+      {
+        "b": "false"
+      },
+      true
+    ],
+    [
+      "equality - false condition vs string false",
+      {
+        "b": false
+      },
+      {
+        "b": "false"
+      },
+      false
+    ],
+    [
+      "equality - true condition vs string 0",
+      {
+        "b": true
+      },
+      {
+        "b": "0"
+      },
+      true
+    ],
+    [
+      "equality - false condition vs 0",
+      {
+        "b": false
+      },
+      {
+        "b": 0
+      },
+      true
+    ],
+    [
+      "equality - false condition vs empty string",
+      {
+        "b": false
+      },
+      {
+        "b": ""
+      },
+      true
+    ],
+    [
+      "equality - false condition vs missing",
+      {
+        "b": false
+      },
+      {},
+      false
+    ],
+    [
+      "equality - true condition vs missing",
+      {
+        "b": true
+      },
+      {},
+      false
+    ],
+    [
+      "equality - false condition vs null",
+      {
+        "b": false
+      },
+      {
+        "b": null
+      },
+      false
+    ],
+    [
+      "equality - true condition vs empty array",
+      {
+        "b": true
+      },
+      {
+        "b": []
+      },
+      true
+    ],
+    [
+      "equality - null condition vs missing",
+      {
+        "n": null
+      },
+      {},
+      true
+    ],
+    [
+      "equality - null condition vs null",
+      {
+        "n": null
+      },
+      {
+        "n": null
+      },
+      true
+    ],
+    [
+      "equality - null condition vs 0",
+      {
+        "n": null
+      },
+      {
+        "n": 0
+      },
+      false
+    ],
+    [
+      "equality - array condition vs equal array",
+      {
+        "a": [
+          1,
+          "x"
+        ]
+      },
+      {
+        "a": [
+          1,
+          "x"
+        ]
+      },
+      true
+    ],
+    [
+      "equality - array condition vs different order",
+      {
+        "a": [
+          1,
+          2
+        ]
+      },
+      {
+        "a": [
+          2,
+          1
+        ]
+      },
+      false
+    ],
+    [
+      "equality - object condition vs object with extra key",
+      {
+        "o": {
+          "x": 1
+        }
+      },
+      {
+        "o": {
+          "x": 1,
+          "y": 2
+        }
+      },
+      false
+    ],
+    [
+      "equality - object condition vs equal object",
+      {
+        "o": {
+          "x": 1,
+          "y": [
+            true
+          ]
+        }
+      },
+      {
+        "o": {
+          "x": 1,
+          "y": [
+            true
+          ]
+        }
+      },
+      true
+    ],
+    [
+      "equality - nested object condition vs missing",
+      {
+        "o": {
+          "x": null
+        }
+      },
+      {},
+      false
+    ],
+    [
+      "equality - $size with string condition",
+      {
+        "a": {
+          "$size": "2"
+        }
+      },
+      {
+        "a": [
+          1,
+          2
+        ]
+      },
+      true
+    ],
+    [
+      "equality - $all with numeric string element",
+      {
+        "a": {
+          "$all": [
+            1
+          ]
+        }
+      },
+      {
+        "a": [
+          "1",
+          "x"
+        ]
+      },
+      true
     ]
   ],
   "feature": [
