@@ -340,3 +340,28 @@ impl GrowthBookFeatureRuleExperiment {
 pub fn option_map_to_attributes(option_map: Option<HashMap<String, Value>>) -> Option<Vec<GrowthBookAttribute>> {
     option_map.map(|conditions| conditions.iter().map(|(k, v)| GrowthBookAttribute::new(k.clone(), GrowthBookAttributeValue::from(v.clone()))).collect())
 }
+
+#[cfg(test)]
+mod test {
+    use serde_json::json;
+
+    use super::{GrowthBookFeatureRuleExperiment, GrowthBookFeatureRuleForce, GrowthBookFeatureRuleRollout};
+
+    #[test]
+    fn rule_structs_deserialize_with_full_f64_precision() {
+        let force: GrowthBookFeatureRuleForce = serde_json::from_value(json!({"force": true, "coverage": 0.72, "range": [0.0, 0.020000000000000004]})).unwrap();
+        assert_eq!(force.coverage, Some(0.72));
+        assert_eq!(force.range().unwrap().end, 0.020000000000000004);
+
+        let rollout: GrowthBookFeatureRuleRollout = serde_json::from_value(json!({"force": true, "coverage": 0.72, "range": [0.0, 0.020000000000000004]})).unwrap();
+        assert_eq!(rollout.coverage, 0.72);
+        assert_eq!(rollout.range().unwrap().end, 0.020000000000000004);
+
+        let experiment: GrowthBookFeatureRuleExperiment =
+            serde_json::from_value(json!({"variations": [0, 1], "coverage": 0.72, "weights": [0.1, 0.9], "ranges": [[0.0, 0.020000000000000004], [0.5, 1.0]]})).unwrap();
+        assert_eq!(experiment.coverage, Some(0.72));
+        assert_eq!(experiment.weights, Some(vec![0.1, 0.9]));
+        assert_eq!(experiment.ranges()[0].end, 0.020000000000000004);
+        assert_eq!(experiment.model_experiment().weights, Some(vec![0.1, 0.9]));
+    }
+}
